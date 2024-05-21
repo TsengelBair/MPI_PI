@@ -1,5 +1,5 @@
 Program finds Pi using monte-carlo method  
-It also calculates runtime
+It also calculates runtime  
 MPI library allows to parallelize processes on accessible CPU's
 
 Example: on linux, command "mpicxx \-o mpi mpi.cpp" will compile and create executable  
