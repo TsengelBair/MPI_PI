@@ -1,4 +1,4 @@
-Program finds Pi using monte-carlo method
+Program finds Pi using monte-carlo method  
 MPI library allows to parallelize processes on accessible CPU's
 
 Example: on linux, command "mpicxx \-o mpi mpi.cpp" will compile and create executable  
