@@ -1,6 +1,9 @@
-﻿#include <iostream>
+#include <iostream>
 #include <random>
 #include <mpi.h>
+#include <chrono>
+#include <locale>
+#include <codecvt>
 
 double calculatePi(long long num_samples, unsigned int seed) {
     long long num_points_in_circle = 0;
@@ -22,6 +25,12 @@ double calculatePi(long long num_samples, unsigned int seed) {
 }
 
 int main(int argc, char** argv) {
+    std::locale::global(std::locale("Russian_Russia.1251"));
+    std::wcout.imbue(std::locale());
+
+    // Начало общего таймера
+    auto program_start_time = std::chrono::high_resolution_clock::now();
+
     MPI_Init(&argc, &argv);
 
     int rank, size;
@@ -46,7 +55,13 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         global_pi /= size;
-        std::cout << "ПИ: " << global_pi << "   Время выполнения: " << global_elapsed_time << " секунд" << std::endl;
+        // Конец общего таймера
+        auto program_end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> total_program_time = program_end_time - program_start_time;
+
+        std::wcout << L"ПИ: " << global_pi << L"   Время подсчета: " << global_elapsed_time << L" секунд" << std::endl;
+        std::wcout << L"Общее время выполнения: " << total_program_time.count() << L" секунд" << std::endl;
+        std::wcout << L"Время выполнения последовательной части кода: " << total_program_time.count() - global_elapsed_time << L" секунд" << std::endl;
     }
 
     MPI_Finalize();
