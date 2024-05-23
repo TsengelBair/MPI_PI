@@ -28,9 +28,15 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    long long total_samples = 100000000; // также 100 миллионов
+    long long total_samples = 100000000; // значение по умолчанию
+    if (argc > 1) {
+        total_samples = std::stoll(argv[1]);
+    }
     long long samples_per_process = total_samples / size;
-
+    if (rank == size - 1) {
+    samples_per_process = total_samples - (size - 1) * samples_per_process; // если total_samples не делится нацело на количество процессов
+    }
+    
     unsigned int seed = time(NULL) + rank; // Генерация seed для каждого процесса
 
     double start_time = MPI_Wtime();
@@ -47,8 +53,11 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         global_pi /= size;
         std::cout << "ПИ: " << global_pi << "   Время выполнения: " << global_elapsed_time << " секунд" << std::endl;
+    } else {
+        MPI_Reduce(&local_pi, NULL, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&local_elapsed_time, NULL, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     }
-
+    
     MPI_Finalize();
     return 0;
 }
