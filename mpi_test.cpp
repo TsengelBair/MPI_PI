@@ -25,11 +25,7 @@ double calculatePi(long long num_samples, unsigned int seed) {
 }
 
 int main(int argc, char** argv) {
-    std::locale::global(std::locale("Russian_Russia.1251"));
-    std::wcout.imbue(std::locale());
-
-    // Начало общего таймера
-    auto program_start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = std::chrono::high_resolution_clock::now(); // Начало отсчета времени
 
     MPI_Init(&argc, &argv);
 
@@ -37,31 +33,39 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    long long total_samples = 100000000; // также 100 миллионов
+    long long total_samples = 100000000; // значение по умолчанию
+    if (argc > 1) {
+        total_samples = std::stoll(argv[1]);
+    }
     long long samples_per_process = total_samples / size;
+    if (rank == size - 1) {
+        samples_per_process = total_samples - (size - 1) * samples_per_process; // если total_samples не делится нацело на количество процессов
+    }
 
     unsigned int seed = time(NULL) + rank; // Генерация seed для каждого процесса
 
-    double start_time = MPI_Wtime();
+    auto parallel_start_time = std::chrono::high_resolution_clock::now(); // Начало отсчета времени параллельной части
+
     double local_pi = calculatePi(samples_per_process, seed);
-    double end_time = MPI_Wtime();
-    double local_elapsed_time = end_time - start_time;
+
+    auto parallel_end_time = std::chrono::high_resolution_clock::now(); // Конец отсчета времени параллельной части
+    auto parallel_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parallel_end_time - parallel_start_time).count();
 
     double global_pi;
-    double global_elapsed_time;
 
     MPI_Reduce(&local_pi, &global_pi, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&local_elapsed_time, &global_elapsed_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
         global_pi /= size;
-        // Конец общего таймера
-        auto program_end_time = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> total_program_time = program_end_time - program_start_time;
-
-        std::wcout << L"ПИ: " << global_pi << L"   Время подсчета: " << global_elapsed_time << L" секунд" << std::endl;
-        std::wcout << L"Общее время выполнения: " << total_program_time.count() << L" секунд" << std::endl;
-        std::wcout << L"Время выполнения последовательной части кода: " << total_program_time.count() - global_elapsed_time << L" секунд" << std::endl;
+        auto end_time = std::chrono::high_resolution_clock::now(); // Конец отсчета времени
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        std::cout << "ПИ: " << global_pi << std::endl;
+        std::cout << "Время выполнения: " << duration << " мс" << std::endl;
+        std::cout << "Время выполнения параллельной части: " << parallel_duration << " мс" << std::endl;
+        std::cout << "Доля параллельной части: " << (duration - parallel_duration)/duration << std::endl;
+        std::cout << "Доля последовательной части: " << (1 - (duration - parallel_duration)/duration) << std::endl;
+    } else {
+        MPI_Reduce(&local_pi, NULL, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     }
 
     MPI_Finalize();
