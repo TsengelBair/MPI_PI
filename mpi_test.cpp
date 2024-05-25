@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     double local_pi = calculatePi(samples_per_process, seed);
 
     auto parallel_end_time = std::chrono::high_resolution_clock::now(); // Конец отсчета времени параллельной части
-    auto parallel_duration = std::chrono::duration_cast<std::chrono::milliseconds>(parallel_end_time - parallel_start_time).count();
+    auto parallel_duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(parallel_end_time - parallel_start_time).count();
 
     double global_pi;
 
@@ -56,12 +56,12 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         global_pi /= size;
         auto end_time = std::chrono::high_resolution_clock::now(); // Конец отсчета времени
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        auto duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(end_time - start_time).count();
         std::cout << "ПИ: " << global_pi << std::endl;
         std::cout << "Время выполнения: " << duration << " мс" << std::endl;
         std::cout << "Время выполнения параллельной части: " << parallel_duration << " мс" << std::endl;
-        std::cout << "Доля параллельной части: " << (duration - parallel_duration)/duration << std::endl;
-        std::cout << "Доля последовательной части: " << (1 - (duration - parallel_duration)/duration) << std::endl;
+        std::cout << "Доля последовательной части: " << (duration - parallel_duration)/duration << std::endl;
+        std::cout << "Доля параллельной части: " << parallel_duration/duration << std::endl;
     } else {
         MPI_Reduce(&local_pi, NULL, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     }
