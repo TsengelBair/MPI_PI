@@ -64,8 +64,9 @@ int main(int argc, char** argv) {
         std::cout << "Доля параллельной части: " << parallel_duration/duration << std::endl;
     } else {
         MPI_Reduce(&local_pi, NULL, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    }
 
+    }
+    
     MPI_Finalize();
     return 0;
 }
