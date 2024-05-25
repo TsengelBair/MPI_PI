@@ -2,8 +2,6 @@
 #include <random>
 #include <mpi.h>
 #include <chrono>
-#include <locale>
-#include <codecvt>
 
 double calculatePi(long long num_samples, unsigned int seed) {
     long long num_points_in_circle = 0;
